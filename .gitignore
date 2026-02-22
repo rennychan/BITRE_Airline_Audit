@@ -77,3 +77,8 @@ Thumbs.db
 *_temp.csv
 temp*.xlsx
 temp*.csv
+
+# Excluded from repo (data files, one-time scripts)
+air_fares_0226.xlsx
+air_fares_new.csv
+export_to_csv.py

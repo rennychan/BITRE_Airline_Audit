@@ -87,7 +87,7 @@ Both panes display official notes on hover for key dates (e.g., June 2011 Flexi 
 - **Terminal**: Audit report with scope, key findings, and historical context
 - **Chart**: `trend_analysis.html` — interactive dual-layer subplot (Corporate Yield Audit / Market Competition Audit) with Business, Restricted Economy, and Best Discount indices; leakage markers; and hover notes for key events
 
-<img width="2523" height="1287" alt="image" src="https://github.com/user-attachments/assets/4200b282-5930-422c-9681-3fb6ebd8b6f7" />
+<img width="2544" height="1271" alt="image" src="https://github.com/user-attachments/assets/62b61e8e-f43c-47c3-818a-0719805a57f1" />
 
 ---
 

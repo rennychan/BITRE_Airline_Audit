@@ -1,12 +1,79 @@
-# Python stuff
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*$py.class
 
-# Data files (IMPORTANT: This keeps your Excel/CSV off GitHub)
-*.xlsx
-*.csv
+# C extensions
+*.so
 
-# OS/IDE stuff
-.DS_Store
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.idea/
 .vscode/
-.cursor/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific: temporary or generated data files
+*.tmp.xlsx
+*.tmp.csv
+*_temp.xlsx
+*_temp.csv
+temp*.xlsx
+temp*.csv

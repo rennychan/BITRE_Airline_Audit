@@ -3,9 +3,11 @@ BITRE Airline Fare Audit Engine
 Data cleaning, anomaly detection, and trend visualization for domestic air fare indices.
 """
 
-import pandas as pd
-import numpy as np
 from pathlib import Path
+from typing import Optional
+
+import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -15,13 +17,20 @@ OUTPUT_HTML = DATA_DIR / "trend_analysis.html"
 
 
 def _find_air_fares_file() -> Path:
-    """Find the most recent air_fares*.csv or air_fares*.xlsx in the project folder."""
-    patterns = list(DATA_DIR.glob("air_fares*.csv")) + list(DATA_DIR.glob("air_fares*.xlsx"))
+    """Find the most recent air_fare*.csv/xlsx or air_fares*.csv/xlsx in the project folder."""
+    patterns = (
+        list(DATA_DIR.glob("air_fare*.csv"))
+        + list(DATA_DIR.glob("air_fare*.xlsx"))
+        + list(DATA_DIR.glob("air_fares*.csv"))
+        + list(DATA_DIR.glob("air_fares*.xlsx"))
+    )
     if not patterns:
         raise FileNotFoundError(
-            f"No air_fares*.csv or air_fares*.xlsx found in {DATA_DIR}"
+            f"No air_fare*.csv/xlsx or air_fares*.csv/xlsx found in {DATA_DIR}"
         )
     return max(patterns, key=lambda p: p.stat().st_mtime)
+
+
 COL_BUSINESS = "Real Business Class"
 COL_ECONOMY = "Real Restricted Economy"
 COL_BEST_DISCOUNT = "Real Best Discount"
@@ -46,10 +55,8 @@ def add_historical_notes(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def load_data() -> pd.DataFrame:
-    """Load air fares data from the most recent air_fares*.csv or air_fares*.xlsx in the folder."""
-    data_path = _find_air_fares_file()
-
+def _load_raw(data_path: Path) -> pd.DataFrame:
+    """Load raw data from CSV or XLSX file."""
     if data_path.suffix.lower() == ".csv":
         # CSV: BITRE often has title row 0, headers in row 1
         for header_row in range(5):
@@ -82,7 +89,14 @@ def load_data() -> pd.DataFrame:
     return df
 
 
-def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+def load_and_clean_data() -> pd.DataFrame:
+    """Load and clean BITRE air fare data from CSV or XLSX."""
+    data_path = _find_air_fares_file()
+    df = _load_raw(data_path)
+    return _clean_data(df)
+
+
+def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """Parse Month to datetime and coerce numeric columns."""
     df = df.copy()
 
@@ -143,35 +157,29 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df.sort_values(COL_MONTH).reset_index(drop=True)
 
 
-def compute_mom_changes(df: pd.DataFrame) -> pd.DataFrame:
-    """Calculate Month-on-Month % change for Business and Economy indices."""
+def calculate_audit_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate MoM changes, flag yield anomalies, and attach historical notes."""
     df = df.copy()
     df["Business_MoM_pct"] = df[COL_BUSINESS].pct_change() * 100
     df["Economy_MoM_pct"] = df[COL_ECONOMY].pct_change() * 100
-    return df
-
-
-def detect_revenue_leakage(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Flag months where:
-    - Real Restricted Economy dropped by >10%
-    - Real Business Class remained stable (between -3% and +3%)
-    """
-    df = df.copy()
     economy_drop = df["Economy_MoM_pct"] < -10
     business_stable = (df["Business_MoM_pct"] >= -3) & (df["Business_MoM_pct"] <= 3)
     df["REVENUE_LEAKAGE"] = economy_drop & business_stable
-    return df
+    return add_historical_notes(df)
 
 
-def build_chart(df: pd.DataFrame, output_path: Path) -> None:
-    """Create vertical subplot chart: Corporate Yield (top) and Market Competition (bottom)."""
+def generate_dashboard(df: pd.DataFrame, output_path: Optional[Path] = None) -> None:
+    """Generate the Plotly dashboard and write to HTML."""
+    output_path = output_path or OUTPUT_HTML
     fig = make_subplots(
         rows=2,
         cols=1,
         shared_xaxes=True,
         vertical_spacing=0.08,
-        subplot_titles=("Corporate Yield Audit", "Market Competition Audit"),
+        subplot_titles=(
+            "Premium Yield Protection & Buy-Down Audit",
+            "Discount Fare Benchmarking & Market Dynamics",
+        ),
     )
 
     # Build hover note for customdata (official notes)
@@ -209,7 +217,7 @@ def build_chart(df: pd.DataFrame, output_path: Path) -> None:
         col=1,
     )
 
-    # Leakage markers (top chart only)
+    # Revenue Integrity Alert markers (top chart only)
     leakage = df[df["REVENUE_LEAKAGE"]]
     if len(leakage) > 0:
         leakage_notes = leakage["official_note"].apply(
@@ -219,11 +227,11 @@ def build_chart(df: pd.DataFrame, output_path: Path) -> None:
             go.Scatter(
                 x=leakage[COL_MONTH],
                 y=leakage[COL_ECONOMY],
-                name="REVENUE_LEAKAGE",
+                name="Revenue Integrity Alert",
                 mode="markers",
                 marker=dict(size=12, color="red", symbol="x", line=dict(width=2)),
                 customdata=leakage_notes,
-                hovertemplate="REVENUE_LEAKAGE | Economy: %{y:.2f}%{customdata}<extra></extra>",
+                hovertemplate="Revenue Integrity Alert | Economy: %{y:.2f}%{customdata}<extra></extra>",
             ),
             row=1,
             col=1,
@@ -262,7 +270,7 @@ def build_chart(df: pd.DataFrame, output_path: Path) -> None:
         )
 
     fig.update_layout(
-        title="Australian Domestic Aviation: Fare Index Trend & Revenue Leakage Audit (1992-2026)",
+        title="Australian Domestic Aviation Yield Integrity Dashboard",
         template="plotly_white",
         paper_bgcolor="white",
         plot_bgcolor="white",
@@ -343,16 +351,8 @@ def print_summary(df: pd.DataFrame) -> None:
         print()
 
 
-def main() -> None:
-    df_raw = load_data()
-    df = clean_data(df_raw)
-    df = compute_mom_changes(df)
-    df = detect_revenue_leakage(df)
-    df = add_historical_notes(df)
-
-    build_chart(df, OUTPUT_HTML)
-    print_summary(df)
-
-
 if __name__ == "__main__":
-    main()
+    df = load_and_clean_data()
+    df = calculate_audit_metrics(df)
+    generate_dashboard(df)
+    print_summary(df)

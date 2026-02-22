@@ -64,13 +64,3 @@ The code is modularized into a clear data pipeline:
 
 5. Open `trend_analysis.html` in a browser to view the interactive dashboard.
 
----
-
-## 💡 Dashboard Image for GitHub
-
-For the chart image to display in this README:
-
-1. Take a screenshot of your final chart from `trend_analysis.html`.
-2. Name it `dashboard.png`.
-3. Place it in the main project folder.
-4. The `![Yield Integrity Dashboard](dashboard.png)` reference above will then display the image on GitHub.
